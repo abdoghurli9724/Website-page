@@ -678,6 +678,26 @@ window.addEventListener("load", async ()=>{
   showAllSections(); // عرض الأقسام عند الإقلاع
   setTimeout(()=> document.getElementById("welcome").classList.add("hide"), 2600);
 });
+/* ---------- إغلاق القائمة عند التمرير أو النقر خارجها ---------- */
+function closeMenu(){
+  document.getElementById("neonMenu").classList.remove("open");
+  document.getElementById("burger").classList.remove("open");
+}
+
+// إغلاق عند التمرير
+window.addEventListener("scroll", () => {
+  const menu = document.getElementById("neonMenu");
+  if(menu.classList.contains("open")) closeMenu();
+});
+
+// إغلاق عند النقر خارج القائمة
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("neonMenu");
+  const burger = document.getElementById("burger");
+  if(menu.classList.contains("open") && !menu.contains(e.target) && !burger.contains(e.target)){
+    closeMenu();
+  }
+});
 </script>
 </body>
 </html>
