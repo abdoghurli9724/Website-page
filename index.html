@@ -49,7 +49,7 @@
   .search-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
     min-height:50vh;transition:.4s;margin-top:20px}
   .search-wrap.small{min-height:0;padding:20px 0}
-  .search-wrap.hide{display:none !important;} /* إخفاء قسم البحث بالكامل عند فتح الأقسام */
+  .search-wrap.hide{display:none !important;}
   
   #searchBtn{width:90px;height:90px;border-radius:50%;border:3px solid var(--neon);background:var(--card);
     cursor:pointer;font-size:2rem;color:var(--neon);box-shadow:0 0 25px var(--neon),inset 0 0 15px rgba(0,247,255,.2);
@@ -143,7 +143,12 @@
 
   /* ===== التذييل وإشعار السحابة ===== */
   .cloud-notice{text-align:center;color:var(--sub);font-size:.85rem;margin-top:15px;line-height:1.5}
-  footer{text-align:center;padding:20px;color:var(--sub);font-size:.9rem;border-top:1px solid rgba(0,247,255,.1);margin-top:auto}
+  footer{text-align:center;padding:20px;font-size:.9rem;border-top:1px solid rgba(0,247,255,.1);margin-top:auto}
+  
+  /* تنسيقات حتة حالة الاتصال بالفوتر */
+  .cloud-status{font-weight:bold;transition:.3s}
+  .cloud-status.online{color:#3aff8c;text-shadow:0 0 8px rgba(58,255,140,.4)}
+  .cloud-status.offline{color:#ff4d4d;text-shadow:0 0 8px rgba(255,77,77,.4)}
 </style>
 </head>
 <body>
@@ -307,7 +312,7 @@
 </div>
 
 <footer>
-  <p>☁️ متصل بالسحابة — البيانات محفوظة</p>
+  <p id="cloudStatusText" class="cloud-status">⏳ جاري التحقق من الاتصال بالسحابة...</p>
 </footer>
 
 <script>
@@ -353,18 +358,44 @@ function showConfirm(title, message, onConfirm, icon = '⚠️') {
   document.getElementById('customNotifyModal').classList.add('show');
 }
 
-/* ---------- قاعدة البيانات ---------- */
+/* ---------- قاعدة البيانات والتحقق من السحابة ---------- */
+function updateCloudStatus(isOnline) {
+  const statusElem = document.getElementById("cloudStatusText");
+  if (isOnline) {
+    statusElem.textContent = "🟢 متصل بالسحابة — البيانات محفوظة";
+    statusElem.className = "cloud-status online";
+  } else {
+    statusElem.textContent = "🔴 غير متصل بالسحابة";
+    statusElem.className = "cloud-status offline";
+  }
+}
+
 async function loadDB(){
   try{
-    const j = await (await fetch(`${BIN_URL}/latest`, { headers: HEADERS })).json();
+    const res = await fetch(`${BIN_URL}/latest`, { headers: HEADERS });
+    if(!res.ok) throw new Error("تعذر الاتصال بالخادم");
+    
+    const j = await res.json();
     DB = Object.assign(DB, j.record || {});
-  }catch(e){ console.warn("تعذر تحميل البيانات:", e); }
+    updateCloudStatus(true); // الاتصال ناجح والمعلومات صحيحة
+  }catch(e){ 
+    console.warn("تعذر تحميل البيانات:", e); 
+    updateCloudStatus(false); // المفاتيح خاطئة أو لا يوجد اتصال
+  }
   fillCatSelect();
 }
+
 async function saveDB(){
-  try{ await fetch(BIN_URL, { method:"PUT", headers: HEADERS, body: JSON.stringify(DB) }); }
-  catch(e){ showAlert("خطأ في الحفظ", "تعذر الحفظ في jsonbin، تحقق من المفاتيح والأذونات.", "❌"); }
+  try{ 
+    const res = await fetch(BIN_URL, { method:"PUT", headers: HEADERS, body: JSON.stringify(DB) });
+    if(!res.ok) throw new Error("خطأ في الحفظ");
+    updateCloudStatus(true);
+  }catch(e){ 
+    updateCloudStatus(false);
+    showAlert("خطأ في الحفظ", "تعذر الحفظ في JSONBIN، تحقق من صحة المفاتيح والاتصال.", "❌"); 
+  }
 }
+
 function fillCatSelect(){
   const sel = document.getElementById("aCat");
   if(sel) sel.innerHTML = DB.sections.map(s=>`<option value="${s}">${s}</option>`).join("");
@@ -410,7 +441,6 @@ function closeMenu(){
 
 /* ---------- التحكم بالبحث ---------- */
 function collapseSearch(){
-  // إعادة زر البحث إلى شكله الدائري المعتاد
   document.getElementById("searchBtn").style.display = "block";
   document.getElementById("searchRow").classList.remove("show");
   document.getElementById("searchWrap").classList.remove("small");
@@ -420,7 +450,6 @@ function collapseSearch(){
 
 function showSearchCircle(){
   closeMenu();
-  // إظهار منطقة البحث وإخفاء الأقسام
   document.getElementById("searchWrap").classList.remove("hide");
   document.getElementById("sectionsGrid").style.display = "none";
   document.getElementById("contactSec").classList.remove("show");
@@ -505,8 +534,6 @@ function showAllSections(){
   currentSection = null;
   document.getElementById("results").innerHTML="";
   document.getElementById("contactSec").classList.remove("show");
-  
-  // إخفاء منطقة البحث والدائرة بالكامل عند فتح الأقسام
   document.getElementById("searchWrap").classList.add("hide");
   
   if(!currentUser || !currentUser.isAdmin) document.getElementById("adminPanel").classList.remove("show");
@@ -617,7 +644,9 @@ function logout(){
 /* ---------- إدارة المشرف ---------- */
 async function refreshStats(){
   try{
-    const j = await (await fetch(`${BIN_URL}/latest`,{headers:HEADERS})).json();
+    const res = await fetch(`${BIN_URL}/latest`,{headers:HEADERS});
+    if(!res.ok) throw new Error();
+    const j = await res.json();
     const v = (j.record||{}).visits || {};
     document.getElementById("stVisitors").textContent = v.totalVisitors || 0;
     document.getElementById("stClicks").textContent   = v.siteClicks || 0;
@@ -625,6 +654,7 @@ async function refreshStats(){
     document.getElementById("stActive").textContent   = Math.max(1, Math.min(v.totalVisitors||1, 30));
   }catch(e){}
 }
+
 async function renderAdminLists(){
   await loadDB();
   document.getElementById("usersList").innerHTML = (DB.users||[]).map(u=>`
@@ -647,6 +677,7 @@ async function renderAdminLists(){
     </div>`).join("") || `<p style="color:var(--sub);text-align:center">لا توجد ترشيحات بعد</p>`;
   renderSectionManage();
 }
+
 function renderSectionManage(){
   document.getElementById("secManage").innerHTML = DB.sections.map(sec=>`
     <div class="sug-item" style="cursor:default">
@@ -654,10 +685,12 @@ function renderSectionManage(){
       <button class="row-del" title="حذف القسم" onclick="deleteSectionAdmin('${sec}')">🗑️</button>
     </div>`).join("");
 }
+
 async function deleteSectionAdmin(sec){
   deleteSection(sec);
   await renderAdminLists();
 }
+
 async function acceptSuggestion(name, url, cat){
   if(cat && !DB.sections.includes(cat)) DB.sections.push(cat);
   DB.sites.push({ name, url, desc:"", category:cat||"عام", img:"",
@@ -665,6 +698,7 @@ async function acceptSuggestion(name, url, cat){
   await saveDB(); fillCatSelect(); await renderAdminLists();
   showAlert("تم القبول", "تم قبول الترشيح وإضافة الموقع بنجاح ✔", "✅");
 }
+
 async function rejectSuggestion(i){
   DB.suggestions.splice(i,1);
   await saveDB(); await renderAdminLists();
@@ -691,6 +725,7 @@ function openContact(){
   document.getElementById("results").innerHTML="";
   document.getElementById("contactSec").scrollIntoView({behavior:"smooth"});
 }
+
 async function sendMsg(){
   const msg = cMsg.value.trim();
   if(!msg) return;
@@ -714,6 +749,7 @@ function previewImg(e){
   };
   rd.readAsDataURL(f);
 }
+
 async function addSite(e){
   e.preventDefault();
   const cat = aCat.value.trim();
@@ -731,6 +767,7 @@ async function addSite(e){
   if(currentSection) openSection(currentSection);
   else showAllSections();
 }
+
 async function addSection(e){
   e.preventDefault();
   const s = aSec.value.trim();
@@ -741,6 +778,7 @@ async function addSection(e){
     showAlert("تمت الإضافة", "تمت إضافة القسم الجديد بنجاح ✔", "📁");
   }
 }
+
 function deleteSite(idx){
   showConfirm("حذف الموقع", "هل أنت تأكد من رغبتك في حذف هذا الموقع؟", async () => {
     DB.sites.splice(idx,1);
@@ -750,25 +788,22 @@ function deleteSite(idx){
   }, "🗑️");
 }
 
-/* ---------- إدارة النقرات الخارجية وتجهيز الصفحة ---------- */
+/* ---------- الأحداث الجانبية والتأسيس ---------- */
 document.querySelectorAll(".modal").forEach(m=>{
   m.addEventListener("click", e=>{ if(e.target===m) m.classList.remove("show"); });
 });
 
-/* النقر خارج منطقة البحث يعيد الشريط إلى الشكل الدائري */
 document.addEventListener("click", (e) => {
   const searchWrap = document.getElementById("searchWrap");
   const neonMenu = document.getElementById("neonMenu");
   const burger = document.getElementById("burger");
   
-  // إذا كان مربع البحث مفتوحاً وتم النقر خارجه
   if (searchWrap && !searchWrap.contains(e.target) && !neonMenu.contains(e.target) && !burger.contains(e.target)) {
     if (document.getElementById("searchRow").classList.contains("show")) {
       collapseSearch();
     }
   }
 
-  // إغلاق القائمة الجانبية عند النقر خارجها
   if (neonMenu && neonMenu.classList.contains("open") && !neonMenu.contains(e.target) && !burger.contains(e.target)) {
     closeMenu();
   }
@@ -788,7 +823,6 @@ window.addEventListener("load", async () => {
     document.getElementById("welcome").classList.add("hide");
   }, 2600);
 });
-
 </script>
 </body>
 </html>
