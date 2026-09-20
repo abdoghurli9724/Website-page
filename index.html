@@ -88,23 +88,40 @@
   .del-x.sec-del{top:auto;bottom:8px;left:8px;width:26px;height:26px;font-size:.8rem}
 
   /* ===== المودالات وتسجيل الدخول ===== */
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;
-    justify-content:center;z-index:2000;backdrop-filter:blur(4px)}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;
+    justify-content:center;z-index:2000;backdrop-filter:blur(6px)}
   .modal.show{display:flex}
-  .modal-box{background:var(--card);border-radius:20px;padding:40px;width:min(420px,92vw);
-    border:1px solid var(--neon);box-shadow:0 0 40px rgba(0,247,255,.25);animation:pop .4s ease;
-    max-height:92vh;overflow-y:auto}
+  .modal-box{background:var(--card);border-radius:20px;padding:35px;width:min(420px,92vw);
+    border:1px solid var(--neon);box-shadow:0 0 40px rgba(0,247,255,.3), inset 0 0 15px rgba(0,247,255,.1);
+    animation:pop .4s ease;max-height:92vh;overflow-y:auto;position:relative}
   .modal-box h2{text-align:center;color:var(--neon);text-shadow:0 0 10px var(--neon);margin-bottom:25px}
   .modal-box input{width:100%;padding:13px 16px;margin-bottom:15px;border-radius:10px;
     border:1px solid var(--neon);background:var(--bg);color:var(--text);outline:none}
   .modal-box button,.wide-btn{width:100%;padding:13px;border:none;border-radius:10px;cursor:pointer;color:#fff;
-    font-weight:bold;background:linear-gradient(90deg,var(--neon),var(--neon2))}
-  .ghost{background:none !important;color:var(--sub) !important;margin-top:8px;font-weight:normal !important}
+    font-weight:bold;background:linear-gradient(90deg,var(--neon),var(--neon2));
+    box-shadow:0 0 15px rgba(0,247,255,.3);transition:.3s}
+  .modal-box button:hover,.wide-btn:hover{box-shadow:0 0 25px rgba(255,0,230,.5);transform:scale(1.02)}
+  .ghost{background:none !important;color:var(--sub) !important;margin-top:8px;font-weight:normal !important;box-shadow:none !important}
+  .ghost:hover{color:var(--neon) !important}
   .err{color:#ff5470;text-align:center;font-size:.85rem;min-height:18px}
   .tab-row{display:flex;gap:10px;margin-bottom:22px}
   .tab-row button{flex:1;padding:10px;border-radius:8px;border:1px solid var(--neon);background:none;
-    color:var(--sub);cursor:pointer;font-size:1rem;transition:.3s}
+    color:var(--sub);cursor:pointer;font-size:1rem;transition:.3s;box-shadow:none}
   .tab-row button.active{background:linear-gradient(90deg,var(--neon),var(--neon2));color:#fff;border:none}
+
+  /* ===== إشعار النيون الاحترافي الجميل ===== */
+  #toastModal .modal-box{
+    border: 2px solid var(--neon);
+    box-shadow: 0 0 50px rgba(0, 247, 255, 0.4), inset 0 0 20px rgba(0, 247, 255, 0.15);
+    text-align: center;
+  }
+  .toast-badge{
+    width: 70px; height: 70px; border-radius: 50%;
+    margin: 0 auto 18px; display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; background: rgba(0, 247, 255, 0.1);
+    border: 2px solid var(--neon); box-shadow: 0 0 20px var(--neon);
+    animation: pop 0.5s ease;
+  }
 
   /* ===== لوحة المشرف ===== */
   #adminPanel{display:none;padding:30px 6vw;max-width:1000px;margin:0 auto}
@@ -161,7 +178,7 @@
 </nav>
 
 <section class="search-wrap" id="searchWrap">
-  <button id="searchBtn" onclick="expandSearch()">🌐</button>
+  <button id="searchBtn" onclick="expandSearch()">🔍</button>
   <div class="search-row" id="searchRow">
     <input id="searchInput" placeholder="ابحث عن مجال... مثال: برمجة، تصميم، تعليم" oninput="liveSuggest()">
     <button id="searchBtn2" onclick="doSearch()">بحث</button>
@@ -222,6 +239,16 @@
   <div class="ok-msg" id="okMsg">✔ تم إرسال رسالتك بنجاح، شكراً لك!</div>
 </section>
 
+<!-- مودال الإشعار النيون الاحترافي بديل alert الجاهز -->
+<div class="modal" id="toastModal">
+  <div class="modal-box">
+    <div class="toast-badge" id="toastBadge">✨</div>
+    <h2 id="toastTitle" style="margin-bottom:12px; font-size:1.4rem;">تنبيه</h2>
+    <p id="toastMsg" style="color:var(--text); font-size:1.05rem; margin-bottom:25px; line-height:1.5; text-align:center;"></p>
+    <button class="wide-btn" onclick="closeModal('toastModal')">حسناً</button>
+  </div>
+</div>
+
 <!-- مودال الدخول / التسجيل -->
 <div class="modal" id="authModal">
   <div class="modal-box">
@@ -275,11 +302,11 @@
 </div>
 
 <script>
-/* ================== الإعدادات - عدّل هنا ================== */
-const JSONBIN_ID   = "6aaf174eac6210605ae110f6";        // معرف الـ Bin من jsonbin.io
-const MASTER_KEY   = "$2a$10$ivwSTRMoM3LWu6xcGn1TuOwDAt1Od36P/ifB92r0AgPfmP6ZeuEyy";    // X-Master-Key من jsonbin.io
-const ADMIN_SECRET_CODE = "SUPER-ADMIN-2026"; // كود المشرف السري عند التسجيل (غيّره!)
-const GUEST_LIMIT  = 3;  // عدد المواقع المسموح للزائر غير المسجل
+/* ================== الإعدادات ================== */
+const JSONBIN_ID   = "6aaf174eac6210605ae110f6";        
+const MASTER_KEY   = "$2a$10$ivwSTRMoM3LWu6xcGn1TuOwDAt1Od36P/ifB92r0AgPfmP6ZeuEyy";    
+const ADMIN_SECRET_CODE = "SUPER-ADMIN-2026"; 
+const GUEST_LIMIT  = 3;  
 const BIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
 const HEADERS = {
   "Content-Type": "application/json",
@@ -289,8 +316,16 @@ const HEADERS = {
 
 let DB = { sites:[], sections:["برمجة","تصميم","تعليم"], visits:{totalVisitors:0, siteClicks:0},
            users:[], messages:[], suggestions:[] };
-let currentUser = null; // {username, isAdmin}
-let currentSection = null; // القسم المفتوح حالياً
+let currentUser = null; 
+let currentSection = null; 
+
+/* ---------- نظام الإشعارات والتنبيهات النيون ---------- */
+function showToast(msg, icon = "✨", title = "تمت العملية"){
+  document.getElementById("toastBadge").textContent = icon;
+  document.getElementById("toastTitle").textContent = title;
+  document.getElementById("toastMsg").textContent = msg;
+  document.getElementById("toastModal").classList.add("show");
+}
 
 /* ---------- تحميل وحفظ قاعدة البيانات ---------- */
 async function loadDB(){
@@ -302,7 +337,7 @@ async function loadDB(){
 }
 async function saveDB(){
   try{ await fetch(BIN_URL, { method:"PUT", headers: HEADERS, body: JSON.stringify(DB) }); }
-  catch(e){ alert("تعذر الحفظ في jsonbin، تحقق من المفاتيح."); }
+  catch(e){ showToast("تعذر الحفظ في jsonbin، تحقق من المفاتيح.", "⚠️", "خطأ في الاتصال"); }
 }
 function fillCatSelect(){
   const sel = document.getElementById("aCat");
@@ -394,6 +429,7 @@ function renderResults(list, showAdminDelete){
     </div>`;
   }).join("");
 }
+
 /* فتح موقع مع حماية حد الزائر */
 async function tryOpenSite(idx){
   if(!canOpenSite()){
@@ -402,12 +438,12 @@ async function tryOpenSite(idx){
   }
   const s = DB.sites[idx];
   if(!s) return;
-  if(!currentUser) incGuestOpens(); // عدّاد الزائر فقط
+  if(!currentUser) incGuestOpens(); 
   DB.visits.siteClicks = (DB.visits.siteClicks||0) + 1;
   await saveDB();
   if(currentUser && currentUser.isAdmin) refreshStats();
   window.open(s.url, "_blank");
-  // إن وصل للحد الأخير نبّهه مسبقاً
+
   if(!currentUser && getGuestOpens() >= GUEST_LIMIT){
     document.getElementById("limitModal").classList.add("show");
   }
@@ -415,7 +451,8 @@ async function tryOpenSite(idx){
 
 /* ---------- الأقسام ---------- */
 function showAllSections(){
-  toggleMenu();
+  const menu = document.getElementById("neonMenu");
+  if(menu.classList.contains("open")) toggleMenu();
   currentSection = null;
   document.getElementById("results").innerHTML="";
   document.getElementById("contactSec").classList.remove("show");
@@ -435,6 +472,7 @@ function showAllSections(){
   }).join("") || `<p style="grid-column:1/-1;text-align:center;color:var(--sub)">لا توجد أقسام بعد</p>`;
   window.scrollTo({top:0, behavior:"smooth"});
 }
+
 function openSection(sec){
   currentSection = sec;
   document.getElementById("sectionsGrid").style.display="none";
@@ -444,6 +482,7 @@ function openSection(sec){
   renderResults(list, currentUser && currentUser.isAdmin);
   window.scrollTo({top: document.getElementById("results").offsetTop - 60, behavior:"smooth"});
 }
+
 async function deleteSection(sec){
   if(!confirm(`حذف القسم "${sec}"؟ المواقع داخله لن تُحذف لكن ستصبح بدون قسم.`)) return;
   DB.sections = DB.sections.filter(s=>s!==sec);
@@ -490,10 +529,10 @@ async function doSignup(){
   await saveDB();
   currentUser = { username: u, isAdmin };
   saveSession();
-  sessionStorage.removeItem("guestOpens"); // إزالة حد الزائر بعد التسجيل
+  sessionStorage.removeItem("guestOpens"); 
   closeModal("authModal"); closeModal("limitModal");
   applyAuthUI();
-  alert(isAdmin ? "👑 تم إنشاء حساب المشرف بنجاح!" : "✨ تم إنشاء حسابك بنجاح، مرحباً " + u + "!");
+  showToast(isAdmin ? "تم إنشاء حساب المشرف بنجاح!" : "تم إنشاء حسابك بنجاح، مرحباً " + u + "!", "👑", "أهلاً بك");
 }
 
 async function doLogin(){
@@ -505,7 +544,7 @@ async function doLogin(){
   if(!user) return err.textContent = "اسم المستخدم أو كلمة السر غير صحيحة!";
   currentUser = { username: user.username, isAdmin: !!user.isAdmin };
   saveSession();
-  sessionStorage.removeItem("guestOpens"); // إزالة حد الزائر
+  sessionStorage.removeItem("guestOpens"); 
   closeModal("authModal"); closeModal("limitModal");
   applyAuthUI();
 }
@@ -513,12 +552,12 @@ async function doLogin(){
 function logout(){
   currentUser = null;
   sessionStorage.removeItem("cu");
-  sessionStorage.setItem("guestOpens","0"); // إعادة عداد الزائر بعد الخروج
+  sessionStorage.setItem("guestOpens","0"); 
   document.getElementById("userGreeting").textContent = "";
   document.getElementById("authBtn").style.display = "block";
   document.getElementById("logoutBtn").style.display = "none";
   document.getElementById("adminPanel").classList.remove("show");
-  alert("تم تسجيل الخروج");
+  showToast("تم تسجيل الخروج بنجاح", "🚪", "تسجيل الخروج");
 }
 
 /* ---------- إحصائيات وقوائم المشرف ---------- */
@@ -570,7 +609,7 @@ async function acceptSuggestion(name, url, cat){
   DB.sites.push({ name, url, desc:"", category:cat||"عام", img:"",
     date: new Date().toISOString().slice(0,10), addedBy:"ترشيح مقبول" });
   await saveDB(); fillCatSelect(); await renderAdminLists();
-  alert("تم قبول الترشيح وإضافة الموقع ✔");
+  showToast("تم قبول الترشيح وإضافة الموقع بنجاح ✔", "✔", "تم القبول");
 }
 async function rejectSuggestion(i){
   DB.suggestions.splice(i,1);
@@ -589,7 +628,8 @@ async function sendSuggest(){
   DB.suggestions.push({ name, url, category: sgCat.value.trim(),
     from: currentUser ? currentUser.username : "زائر" });
   await saveDB();
-  closeModal("suggestModal"); alert("شكراً! تم إرسال ترشيحك للمشرف.");
+  closeModal("suggestModal"); 
+  showToast("شكراً لك! تم إرسال ترشيحك للمشرف بنجاح.", "⭐", "تم الإرسال");
 }
 function closeModal(id){ document.getElementById(id).classList.remove("show"); }
 
@@ -635,7 +675,7 @@ async function addSite(e){
     addedBy: currentUser ? currentUser.username : "المشرف"
   });
   await saveDB();
-  alert("تمت إضافة الموقع ✔");
+  showToast("تمت إضافة الموقع بنجاح ✔", "🚀", "إضافة موقع");
   aName.value=aUrl.value=aDesc.value=""; imgData="";
   document.getElementById("imgPrev").style.display="none";
   if(currentSection) openSection(currentSection);
@@ -647,7 +687,8 @@ async function addSection(e){
   if(s && !DB.sections.includes(s)){
     DB.sections.push(s); await saveDB();
     fillCatSelect(); renderSectionManage();
-    aSec.value=""; alert("تمت إضافة القسم ✔");
+    aSec.value=""; 
+    showToast("تمت إضافة القسم بنجاح ✔", "📂", "إضافة قسم");
   }
 }
 async function deleteSite(idx){
@@ -675,46 +716,28 @@ window.addEventListener("load", async ()=>{
   await countVisit();
   restoreSession();
   refreshStats();
-  showAllSections(); // عرض الأقسام عند الإقلاع
+  showAllSections(); 
   setTimeout(()=> document.getElementById("welcome").classList.add("hide"), 2600);
-});
-/* ---------- إغلاق القائمة عند التمرير أو النقر خارجها ---------- */
-function closeMenu(){
-  document.getElementById("neonMenu").classList.remove("open");
-  document.getElementById("burger").classList.remove("open");
-}
-
-// إغلاق عند التمرير
-/* ---------- الإقلاع ---------- */
-window.addEventListener("load", async () => {
-  await loadDB();
-  await countVisit();
-  restoreSession();
-  refreshStats();
-  showAllSections(); // عرض الأقسام عند الإقلاع
-  setTimeout(() => document.getElementById("welcome").classList.add("hide"), 2600);
 });
 
 /* ---------- إغلاق القائمة عند التمرير أو النقر خارجها ---------- */
 window.addEventListener("scroll", () => {
   const menu = document.getElementById("neonMenu");
   const burger = document.getElementById("burger");
-  if (menu && menu.classList.contains("open")) {
+  if(menu && menu.classList.contains("open")) {
     menu.classList.remove("open");
     burger.classList.remove("open");
   }
 });
 
-// إغلاق عند النقر خارج القائمة
 document.addEventListener("click", (e) => {
   const menu = document.getElementById("neonMenu");
   const burger = document.getElementById("burger");
-  if (menu && menu.classList.contains("open") && !menu.contains(e.target) && !burger.contains(e.target)) {
+  if(menu && menu.classList.contains("open") && !menu.contains(e.target) && !burger.contains(e.target)){
     menu.classList.remove("open");
     burger.classList.remove("open");
   }
 });
-
 </script>
 </body>
 </html>
