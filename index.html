@@ -145,7 +145,7 @@
   .cloud-notice{text-align:center;color:var(--sub);font-size:.85rem;margin-top:15px;line-height:1.5}
   footer{text-align:center;padding:20px;font-size:.9rem;border-top:1px solid rgba(0,247,255,.1);margin-top:auto}
   
-  /* تنسيقات حتة حالة الاتصال بالفوتر */
+  /* تنسيقات حالة الاتصال */
   .cloud-status{font-weight:bold;transition:.3s}
   .cloud-status.online{color:#3aff8c;text-shadow:0 0 8px rgba(58,255,140,.4)}
   .cloud-status.offline{color:#ff4d4d;text-shadow:0 0 8px rgba(255,77,77,.4)}
@@ -264,7 +264,13 @@
       <div class="err" id="sErr"></div>
       <button onclick="doSignup()">إنشاء الحساب</button>
     </div>
-    <p class="cloud-notice">☁️ البيانات متزامنة ومحفوظة بأمان عبر قواعد بيانات السحابية.</p>
+
+    <!-- قسم قاعدة البيانات والتحقق من السحابة داخل واجهة تسجيل الدخول -->
+    <div class="cloud-notice">
+      <p id="cloudStatusModalText" class="cloud-status">⏳ جاري التحقق من الاتصال بالسحابة...</p>
+      <p style="margin-top: 5px;">☁️ البيانات متزامنة ومحفوظة بأمان عبر قواعد بيانات السحابية.</p>
+    </div>
+
     <button class="ghost" onclick="closeModal('authModal')">إغلاق</button>
   </div>
 </div>
@@ -361,12 +367,18 @@ function showConfirm(title, message, onConfirm, icon = '⚠️') {
 /* ---------- قاعدة البيانات والتحقق من السحابة ---------- */
 function updateCloudStatus(isOnline) {
   const statusElem = document.getElementById("cloudStatusText");
-  if (isOnline) {
-    statusElem.textContent = "☁️ متصل بالسحابة — البيانات محفوظة";
-    statusElem.className = "cloud-status online";
-  } else {
-    statusElem.textContent = "🔴 غير متصل بالسحابة";
-    statusElem.className = "cloud-status offline";
+  const modalStatusElem = document.getElementById("cloudStatusModalText");
+  
+  const text = isOnline ? "☁️ متصل بالسحابة — البيانات محفوظة" : "🔴 غير متصل بالسحابة";
+  const className = isOnline ? "cloud-status online" : "cloud-status offline";
+
+  if (statusElem) {
+    statusElem.textContent = text;
+    statusElem.className = className;
+  }
+  if (modalStatusElem) {
+    modalStatusElem.textContent = text;
+    modalStatusElem.className = className;
   }
 }
 
