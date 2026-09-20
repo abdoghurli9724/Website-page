@@ -1,678 +1,755 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة الترشيحات وإدارة المواقع</title>
-  
-  <style>
-    /* ==========================================================================
-       1. التنسيقات الأساسية وإعادة الضبط (Reset & Base Styles)
-       ========================================================================== */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>موقعك - أفضل المواقع المتخصصة</title>
+<style>
+  :root{
+    --neon:#00f7ff; --neon2:#ff00e6; --bg:#0a0a12; --card:#12121f;
+    --text:#e8e8f5; --sub:#9a9ab5;
+  }
+  body.light{
+    --bg:#f2f3fa; --card:#ffffff; --text:#1a1a2e; --sub:#55556e;
+    --neon:#0090ff; --neon2:#d400c4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+  body{background:var(--bg);color:var(--text);min-height:100vh;transition:.4s}
 
-    html, body {
-      width: 100%;
-      min-height: 100vh;
-      background-color: #0b0f12;
-      color: #e0e0e0;
-      line-height: 1.6;
-    }
+  /* ===== الواجهة الترحيبية ===== */
+  #welcome{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;z-index:3000;transition:opacity 1s, visibility 1s}
+  #welcome.hide{opacity:0;visibility:hidden}
+  #welcome h1{font-size:3.2rem;background:linear-gradient(90deg,var(--neon),var(--neon2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;animation:pop 1.2s ease}
+  #welcome p{color:var(--sub);margin-top:15px;font-size:1.2rem;animation:fadeUp 1.5s ease}
+  @keyframes pop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+  @keyframes fadeUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .loader{width:60px;height:4px;background:var(--card);border-radius:5px;margin-top:40px;overflow:hidden}
+  .loader::after{content:'';display:block;width:40%;height:100%;background:linear-gradient(90deg,var(--neon),var(--neon2));
+    animation:slide 1.2s infinite}
+  @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
 
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 30px 15px;
-    }
+  /* ===== الشريط والقائمة ===== */
+  .topbar{display:flex;align-items:center;padding:15px 25px;gap:15px}
+  .burger{cursor:pointer;width:32px;display:flex;flex-direction:column;gap:6px;z-index:1001}
+  .burger span{height:3px;background:var(--neon);border-radius:3px;box-shadow:0 0 8px var(--neon);transition:.3s}
+  .burger.open span:nth-child(1){transform:translateY(9px) rotate(45deg)}
+  .burger.open span:nth-child(2){opacity:0}
+  .burger.open span:nth-child(3){transform:translateY(-9px) rotate(-45deg)}
+  .neon-menu{position:fixed;top:70px;right:-300px;width:270px;background:var(--card);
+    border-radius:0 0 15px 15px;padding:20px 0;z-index:1000;transition:right .4s ease;
+    box-shadow:0 0 25px rgba(0,247,255,.15)}
+  .neon-menu.open{right:10px}
+  .neon-menu button{display:block;width:100%;background:none;border:none;color:var(--text);
+    padding:14px 25px;font-size:1.05rem;text-align:right;cursor:pointer;transition:.3s}
+  .neon-menu button:hover{color:var(--neon);text-shadow:0 0 10px var(--neon);background:rgba(0,247,255,.05)}
 
-    /* ==========================================================================
-       2. الهيدر والعناوين (Header & Typography)
-       ========================================================================== */
-    .header-container {
-      text-align: center;
-      margin-bottom: 30px;
-      width: 100%;
-      max-width: 500px;
-    }
+  /* ===== البحث ===== */
+  .search-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:60vh;transition:.4s}
+  .search-wrap.small{min-height:0;padding:30px 0}
+  #searchBtn{width:90px;height:90px;border-radius:50%;border:3px solid var(--neon);background:var(--card);
+    cursor:pointer;font-size:2rem;color:var(--neon);box-shadow:0 0 25px var(--neon),inset 0 0 15px rgba(0,247,255,.2);
+    transition:.4s;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 20px var(--neon)}50%{box-shadow:0 0 45px var(--neon2)}}
+  .search-row{display:none;gap:12px;flex-wrap:wrap;justify-content:center}
+  .search-row.show{display:flex}
+  #searchInput{width:min(500px,80vw);padding:14px 20px;border-radius:30px;border:2px solid var(--neon);
+    background:var(--card);color:var(--text);font-size:1.05rem;outline:none;box-shadow:0 0 15px rgba(0,247,255,.2)}
+  #searchBtn2{padding:14px 35px;border-radius:30px;border:none;background:linear-gradient(90deg,var(--neon),var(--neon2));
+    color:#fff;font-size:1.05rem;cursor:pointer;font-weight:bold}
+  #suggest{margin-top:20px;display:flex;flex-direction:column;gap:10px;width:min(560px,85vw)}
+  .sug-item{background:var(--card);border:1px solid rgba(0,247,255,.25);border-radius:12px;padding:12px 18px;
+    cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:.2s}
+  .sug-item:hover{box-shadow:0 0 15px rgba(0,247,255,.3);transform:translateX(-4px)}
+  .sug-item small{color:var(--sub)}
 
-    .header-title {
-      color: #00f2fe;
-      font-size: 2rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      text-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
-      margin-bottom: 8px;
-    }
+  /* ===== النتائج والأقسام ===== */
+  #results,#sectionsGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+    gap:22px;padding:30px 6vw;max-width:1300px;margin:0 auto}
+  .card{background:var(--card);border-radius:15px;overflow:hidden;cursor:pointer;
+    border:1px solid rgba(0,247,255,.2);transition:.3s;animation:fadeUp .5s ease;position:relative}
+  .card:hover{transform:translateY(-6px);box-shadow:0 0 25px rgba(0,247,255,.3)}
+  .card img{width:100%;height:150px;object-fit:cover;background:#22223a}
+  .card-body{padding:15px}
+  .card h3{color:var(--neon);margin-bottom:6px}
+  .card p{color:var(--sub);font-size:.9rem;margin-bottom:10px}
+  .tag{display:inline-block;font-size:.75rem;padding:4px 12px;border-radius:20px;
+    background:rgba(255,0,230,.15);color:var(--neon2);border:1px solid rgba(255,0,230,.4)}
+  .del-x{position:absolute;top:8px;left:8px;background:rgba(255,0,0,.85);color:#fff;border:none;
+    border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:1rem;z-index:5}
+  .sec-card{background:var(--card);border:1px solid rgba(0,247,255,.3);border-radius:18px;
+    padding:30px 20px;text-align:center;cursor:pointer;transition:.3s;animation:fadeUp .5s ease}
+  .sec-card:hover{transform:translateY(-6px);box-shadow:0 0 25px rgba(0,247,255,.3)}
+  .sec-card .icon{font-size:2.4rem;margin-bottom:10px}
+  .sec-card h3{color:var(--neon);text-shadow:0 0 8px var(--neon)}
+  .sec-card small{color:var(--sub)}
+  .del-x.sec-del{top:auto;bottom:8px;left:8px;width:26px;height:26px;font-size:.8rem}
 
-    .header-subtitle {
-      color: #718096;
-      font-size: 0.95rem;
-    }
+  /* ===== المودالات وتسجيل الدخول ===== */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;
+    justify-content:center;z-index:2000;backdrop-filter:blur(6px)}
+  .modal.show{display:flex}
+  .modal-box{background:var(--card);border-radius:20px;padding:40px;width:min(420px,92vw);
+    border:1px solid var(--neon);box-shadow:0 0 40px rgba(0,247,255,.25);animation:pop .4s ease;
+    max-height:92vh;overflow-y:auto}
+  .modal-box h2{text-align:center;color:var(--neon);text-shadow:0 0 10px var(--neon);margin-bottom:25px}
+  .modal-box input{width:100%;padding:13px 16px;margin-bottom:15px;border-radius:10px;
+    border:1px solid var(--neon);background:var(--bg);color:var(--text);outline:none}
+  .modal-box button,.wide-btn{width:100%;padding:13px;border:none;border-radius:10px;cursor:pointer;color:#fff;
+    font-weight:bold;background:linear-gradient(90deg,var(--neon),var(--neon2))}
+  .ghost{background:none !important;color:var(--sub) !important;margin-top:8px;font-weight:normal !important}
+  .err{color:#ff5470;text-align:center;font-size:.85rem;min-height:18px}
+  .tab-row{display:flex;gap:10px;margin-bottom:22px}
+  .tab-row button{flex:1;padding:10px;border-radius:8px;border:1px solid var(--neon);background:none;
+    color:var(--sub);cursor:pointer;font-size:1rem;transition:.3s}
+  .tab-row button.active{background:linear-gradient(90deg,var(--neon),var(--neon2));color:#fff;border:none}
 
-    /* ==========================================================================
-       3. حاويات النماذج (Containers & Cards)
-       ========================================================================== */
-    .container {
-      width: 100%;
-      max-width: 500px;
-      background: #131a1e;
-      border: 1px solid #1f2930;
-      border-radius: 20px;
-      padding: 28px;
-      margin-bottom: 25px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
+  /* ===== مودال الإشعارات والتأكيدات المخصص ===== */
+  .notify-icon{font-size:3rem;text-align:center;margin-bottom:10px;display:block}
+  .modal-btn-group{display:flex;gap:10px;margin-top:20px}
+  .btn-danger{background:linear-gradient(90deg, #ff3b30, #ff2d55) !important}
 
-    .container:hover {
-      border-color: rgba(0, 242, 254, 0.3);
-      box-shadow: 0 12px 35px rgba(0, 242, 254, 0.08);
-    }
+  /* ===== لوحة المشرف ===== */
+  #adminPanel{display:none;padding:30px 6vw;max-width:1000px;margin:0 auto}
+  #adminPanel.show{display:block}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;margin-bottom:35px}
+  .stat{background:var(--card);border-radius:15px;padding:25px;text-align:center;border:1px solid rgba(0,247,255,.3)}
+  .stat .num{font-size:2.4rem;color:var(--neon);text-shadow:0 0 12px var(--neon)}
+  .stat .lbl{color:var(--sub);margin-top:8px}
+  form.addForm{background:var(--card);border-radius:15px;padding:25px;margin-bottom:30px;
+    display:flex;flex-direction:column;gap:14px;border:1px solid rgba(0,247,255,.2)}
+  .addForm input,.addForm select{padding:12px 16px;border-radius:10px;border:1px solid var(--neon);
+    background:var(--bg);color:var(--text);outline:none;font-size:1rem}
+  .addForm label{color:var(--sub);font-size:.85rem}
+  #imgPrev{max-width:180px;border-radius:10px;display:none}
+  .row-del{color:#ff5470;background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px 10px}
+  .row-del:hover{text-shadow:0 0 8px #ff5470}
 
-    .container h3 {
-      color: #00f2fe;
-      margin-bottom: 20px;
-      font-size: 1.25rem;
-      font-weight: 700;
-      border-bottom: 1px solid #1f2930;
-      padding-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    /* ==========================================================================
-       4. عناصر الإدخال والاستشارات (Form Controls)
-       ========================================================================== */
-    .form-group {
-      margin-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    label {
-      display: block;
-      font-size: 0.88rem;
-      color: #a0aec0;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-
-    input[type="text"], 
-    select, 
-    textarea, 
-    input[type="file"] {
-      width: 100%;
-      padding: 14px 16px;
-      background: #0b0f12;
-      border: 1px solid #222d34;
-      border-radius: 10px;
-      color: #ffffff;
-      font-size: 0.95rem;
-      outline: none;
-      transition: all 0.25s ease-in-out;
-    }
-
-    input[type="text"]::placeholder,
-    textarea::placeholder {
-      color: #4a5568;
-    }
-
-    input[type="text"]:focus, 
-    select:focus, 
-    textarea:focus {
-      border-color: #00f2fe;
-      box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
-      background-color: #0e1418;
-    }
-
-    select {
-      cursor: pointer;
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f2fe' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: left 15px center;
-      background-size: 16px;
-      padding-left: 40px;
-    }
-
-    select option {
-      background-color: #131a1e;
-      color: #ffffff;
-      padding: 10px;
-    }
-
-    input[type="file"] {
-      padding: 10px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      color: #a0aec0;
-    }
-
-    input[type="file"]::-webkit-file-upload-button {
-      background: #1f2930;
-      border: none;
-      color: #00f2fe;
-      padding: 8px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-left: 10px;
-      transition: background 0.2s ease;
-    }
-
-    input[type="file"]::-webkit-file-upload-button:hover {
-      background: #2a3742;
-    }
-
-    /* ==========================================================================
-       5. الأزرار (Buttons)
-       ========================================================================== */
-    .btn-submit {
-      width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-      border: none;
-      border-radius: 10px;
-      color: #05080a;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-      margin-top: 10px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 242, 254, 0.4);
-      filter: brightness(1.1);
-    }
-
-    .btn-submit:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 10px rgba(0, 242, 254, 0.2);
-    }
-
-    /* ==========================================================================
-       6. قائمة عرض الترشيحات (Sites List)
-       ========================================================================== */
-    .sites-list {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      max-height: 400px;
-      overflow-y: auto;
-      padding-left: 5px;
-    }
-
-    .sites-list::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .sites-list::-webkit-scrollbar-track {
-      background: #0b0f12;
-      border-radius: 10px;
-    }
-
-    .sites-list::-webkit-scrollbar-thumb {
-      background: #1f2930;
-      border-radius: 10px;
-    }
-
-    .sites-list::-webkit-scrollbar-thumb:hover {
-      background: #00f2fe;
-    }
-
-    .site-card {
-      background: #0b0f12;
-      border: 1px solid #222d34;
-      border-radius: 12px;
-      padding: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-
-    .site-card:hover {
-      transform: translateX(-4px);
-      border-color: rgba(0, 242, 254, 0.4);
-    }
-
-    .site-info {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .site-info h4 {
-      color: #ffffff;
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
-    .site-info span {
-      color: #00f2fe;
-      font-size: 0.8rem;
-      font-weight: 600;
-      background: rgba(0, 242, 254, 0.08);
-      padding: 2px 8px;
-      border-radius: 4px;
-      width: fit-content;
-    }
-
-    .site-date {
-      color: #4a5568;
-      font-size: 0.78rem;
-    }
-
-    .empty-state {
-      color: #718096;
-      text-align: center;
-      padding: 20px 0;
-      font-size: 0.9rem;
-    }
-
-    /* ==========================================================================
-       7. تصميم الـ Modal الاحترافي المخصص (Custom Modal)
-       ========================================================================== */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(5, 8, 10, 0.85);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 999999;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .modal-card {
-      background: #12191d;
-      border: 1px solid rgba(0, 242, 254, 0.3);
-      border-radius: 24px;
-      padding: 35px 28px;
-      width: 90%;
-      max-width: 400px;
-      text-align: center;
-      box-shadow: 0 0 40px rgba(0, 242, 254, 0.15), 0 25px 50px rgba(0, 0, 0, 0.9);
-      transform: scale(0.7) translateY(30px);
-      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .modal-overlay.active .modal-card {
-      transform: scale(1) translateY(0);
-    }
-
-    .modal-icon-box {
-      width: 70px;
-      height: 70px;
-      margin: 0 auto 18px auto;
-      border-radius: 50%;
-      background: rgba(0, 242, 254, 0.1);
-      border: 1px solid rgba(0, 242, 254, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
-    }
-
-    .modal-title {
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: #ffffff;
-      margin-bottom: 10px;
-    }
-
-    .modal-message {
-      font-size: 0.95rem;
-      color: #a0aec0;
-      line-height: 1.6;
-      margin-bottom: 25px;
-    }
-
-    .modal-btn {
-      width: 100%;
-      padding: 13px;
-      background: #00f2fe;
-      color: #0b0f12;
-      border: none;
-      border-radius: 12px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-    }
-
-    .modal-btn:hover {
-      background: #33f5fe;
-      box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
-    }
-
-    .modal-btn:active {
-      transform: scale(0.97);
-    }
-  </style>
+  /* ===== التواصل ===== */
+  #contactSec{display:none;max-width:700px;margin:0 auto;padding:30px 5vw}
+  #contactSec.show{display:block}
+  #contactSec textarea{width:100%;min-height:140px;border-radius:12px;padding:15px;
+    background:var(--card);color:var(--text);border:1px solid var(--neon);outline:none;font-size:1rem}
+  #contactSec input{width:100%;padding:13px;margin:10px 0;border-radius:10px;background:var(--card);
+    color:var(--text);border:1px solid var(--neon);outline:none}
+  .ok-msg{color:#3aff8c;text-align:center;margin-top:10px;display:none}
+  h2.sec-title{text-align:center;color:var(--neon);text-shadow:0 0 12px var(--neon);margin:20px 0}
+  #userGreeting{margin-right:auto;color:var(--neon);text-shadow:0 0 8px var(--neon);font-size:.95rem}
+</style>
 </head>
 <body>
 
-  <!-- ==========================================================================
-       الهيدر الأساسي
-       ========================================================================== -->
-  <div class="header-container">
-    <h1 class="header-title">لوحة التفاعل والترشيحات</h1>
-    <p class="header-subtitle">قم بإضافة مواقك وترشيحاتك المفضلة بكل سهولة</p>
+<div id="welcome">
+  <h1>موقعك</h1>
+  <p>دليلك الذكي لأفضل المواقع المتخصصة في كل مجال</p>
+  <div class="loader"></div>
+</div>
+
+<div class="topbar">
+  <div class="burger" id="burger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+  <strong style="color:var(--neon);text-shadow:0 0 10px var(--neon)">موقعك</strong>
+  <span id="userGreeting"></span>
+</div>
+
+<nav class="neon-menu" id="neonMenu">
+  <button onclick="showAllSections()">🗂️ الأقسام</button>
+  <button onclick="showToday()">📌 موقع اليوم</button>
+  <button onclick="openSuggestModal()">⭐ ترشيح موقع</button>
+  <button onclick="toggleTheme()">🌓 وضع الإضاءة / الثيم</button>
+  <button onclick="openContact()">✉️ التواصل مع المشرف</button>
+  <button onclick="openAuth()" id="authBtn">🔐 تسجيل الدخول / حساب جديد</button>
+  <button onclick="logout()" id="logoutBtn" style="display:none">🚪 تسجيل الخروج</button>
+</nav>
+
+<section class="search-wrap" id="searchWrap">
+  <button id="searchBtn" onclick="expandSearch()">🌐</button>
+  <div class="search-row" id="searchRow">
+    <input id="searchInput" placeholder="ابحث عن مجال... مثال: برمجة، تصميم، تعليم" oninput="liveSuggest()">
+    <button id="searchBtn2" onclick="doSearch()">بحث</button>
+  </div>
+  <div id="suggest"></div>
+</section>
+
+<!-- شبكة الأقسام -->
+<section id="sectionsGrid"></section>
+
+<div id="results"></div>
+
+<!-- لوحة المشرف -->
+<section id="adminPanel">
+  <h2 class="sec-title">📊 لوحة تحكم المشرف</h2>
+  <div class="stat-grid">
+    <div class="stat"><div class="num" id="stActive">0</div><div class="lbl">نشط الآن</div></div>
+    <div class="stat"><div class="num" id="stVisitors">0</div><div class="lbl">إجمالي الزوار</div></div>
+    <div class="stat"><div class="num" id="stClicks">0</div><div class="lbl">دخول إلى المواقع</div></div>
+    <div class="stat"><div class="num" id="stUsers">0</div><div class="lbl">عدد المستخدمين</div></div>
   </div>
 
-  <!-- ==========================================================================
-       Modal الموحد البديل لـ alert
-       ========================================================================== -->
-  <div id="customModal" class="modal-overlay">
-    <div class="modal-card">
-      <div id="modalIcon" class="modal-icon-box">✨</div>
-      <div id="modalTitle" class="modal-title">تنبيه</div>
-      <div id="modalMessage" class="modal-message">رسالة التنبيه...</div>
-      <button class="modal-btn" onclick="closeModal()">حسناً</button>
+  <h2 class="sec-title">👥 المستخدمون المسجلون</h2>
+  <div id="usersList" style="max-width:700px;margin:0 auto 30px"></div>
+
+  <h2 class="sec-title">✉️ رسائل المستخدمين</h2>
+  <div id="msgsList" style="max-width:700px;margin:0 auto 30px"></div>
+
+  <h2 class="sec-title">⭐ ترشيحات الزوار</h2>
+  <div id="sugList" style="max-width:700px;margin:0 auto 30px"></div>
+
+  <h2 class="sec-title">➕ إضافة موقع إلى قسم</h2>
+  <form class="addForm" onsubmit="addSite(event)">
+    <input id="aName" placeholder="اسم الموقع" required>
+    <input id="aUrl" placeholder="رابط الموقع https://..." required>
+    <input id="aDesc" placeholder="وصف قصير">
+    <label>القسم</label>
+    <select id="aCat" required></select>
+    <label>صورة الموقع</label>
+    <input type="file" id="aImg" accept="image/*" onchange="previewImg(event)">
+    <img id="imgPrev" alt="">
+    <button type="submit">إضافة الموقع</button>
+  </form>
+
+  <h2 class="sec-title">🗂️ إدارة الأقسام</h2>
+  <form class="addForm" onsubmit="addSection(event)">
+    <input id="aSec" placeholder="اسم القسم الجديد" required>
+    <button type="submit">إضافة القسم</button>
+  </form>
+  <div id="secManage" style="max-width:700px;margin:0 auto 30px"></div>
+</section>
+
+<!-- تواصل مع المشرف -->
+<section id="contactSec">
+  <h2 class="sec-title">✉️ راسل المشرف</h2>
+  <textarea id="cMsg" placeholder="اكتب رسالتك هنا..."></textarea>
+  <button class="wide-btn" style="margin-top:10px" onclick="sendMsg()">إرسال الرسالة</button>
+  <div class="ok-msg" id="okMsg">✔ تم إرسال رسالتك بنجاح، شكراً لك!</div>
+</section>
+
+<!-- مودال الدخول / التسجيل -->
+<div class="modal" id="authModal">
+  <div class="modal-box">
+    <h2 id="authTitle">🔐 تسجيل الدخول</h2>
+    <div class="tab-row">
+      <button id="tabLogin" class="active" onclick="switchTab('login')">تسجيل الدخول</button>
+      <button id="tabSignup" onclick="switchTab('signup')">حساب جديد</button>
+    </div>
+    <div id="loginForm">
+      <input id="lUser" placeholder="اسم المستخدم">
+      <input id="lPass" type="password" placeholder="كلمة السر">
+      <div class="err" id="lErr"></div>
+      <button onclick="doLogin()">دخول</button>
+    </div>
+    <div id="signupForm" style="display:none">
+      <input id="sUser" placeholder="اسم المستخدم">
+      <input id="sPass" type="password" placeholder="كلمة السر">
+      <input id="sPass2" type="password" placeholder="تأكيد كلمة السر">
+      <input id="sAdminCode" type="password" placeholder="كود المشرف (اختياري - للمشرف فقط)">
+      <div class="err" id="sErr"></div>
+      <button onclick="doSignup()">إنشاء الحساب</button>
+    </div>
+    <button class="ghost" onclick="closeModal('authModal')">إغلاق</button>
+  </div>
+</div>
+
+<!-- مودال الترشيح -->
+<div class="modal" id="suggestModal">
+  <div class="modal-box">
+    <h2>⭐ ترشيح موقع</h2>
+    <input id="sgName" placeholder="اسم الموقع">
+    <input id="sgUrl" placeholder="رابط الموقع">
+    <input id="sgCat" placeholder="المجال / القسم">
+    <div class="err" id="sgErr"></div>
+    <button onclick="sendSuggest()">إرسال الترشيح</button>
+    <button class="ghost" onclick="closeModal('suggestModal')">إغلاق</button>
+  </div>
+</div>
+
+<!-- مودال حظر الزائر (الحد المجاني) -->
+<div class="modal" id="limitModal">
+  <div class="modal-box">
+    <h2>🔒 انتهت الزيارات المجانية</h2>
+    <p style="text-align:center;color:var(--sub);margin-bottom:20px">
+      لقد فتحت 3 مواقع كزائر. سجّل الدخول أو أنشئ حساباً مجانياً للوصول غير المحدود إلى جميع المواقع!
+    </p>
+    <button onclick="switchTab('login');openAuth();">🔐 تسجيل الدخول</button>
+    <button class="ghost" onclick="switchTab('signup');openAuth();">✨ إنشاء حساب جديد</button>
+    <button class="ghost" onclick="closeModal('limitModal')">إغلاق</button>
+  </div>
+</div>
+
+<!-- مودال التنبيهات والتأكيدات المخصص (بديل Alert & Confirm) -->
+<div class="modal" id="customNotifyModal">
+  <div class="modal-box">
+    <span class="notify-icon" id="notifyIcon">✨</span>
+    <h2 id="notifyTitle">تنبيه</h2>
+    <p id="notifyMessage" style="text-align:center;color:var(--sub);margin-bottom:20px;line-height:1.6"></p>
+    <div id="notifySingleBtn">
+      <button onclick="closeModal('customNotifyModal')">حسناً</button>
+    </div>
+    <div id="notifyConfirmBtns" class="modal-btn-group" style="display:none">
+      <button id="notifyConfirmYesBtn" class="btn-danger">نعم، تأكيد</button>
+      <button class="ghost" style="margin-top:0" onclick="closeModal('customNotifyModal')">إلغاء</button>
     </div>
   </div>
+</div>
 
-  <!-- ==========================================================================
-       1. نموذج إنشاء حساب جديد
-       ========================================================================== -->
-  <div class="container">
-    <h3>
-      <span>✨</span>
-      <span>إنشاء حساب جديد</span>
-    </h3>
-    <form id="signupForm" autocomplete="off">
-      <div class="form-group">
-        <label for="signupName">اسم المستخدم</label>
-        <input type="text" id="signupName" placeholder="أدخل اسمك الكامل..." required>
+<script>
+/* ================== الإعدادات - عدّل هنا ================== */
+const JSONBIN_ID   = "6aaf174eac6210605ae110f6";        // معرف الـ Bin من jsonbin.io
+const MASTER_KEY   = "$2a$10$ivwSTRMoM3LWu6xcGn1TuOwDAt1Od36P/ifB92r0AgPfmP6ZeuEyy";    // X-Master-Key من jsonbin.io
+const ADMIN_SECRET_CODE = "SUPER-ADMIN-2026"; // كود المشرف السري عند التسجيل (غيّره!)
+const GUEST_LIMIT  = 3;  // عدد المواقع المسموح للزائر غير المسجل
+const BIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
+const HEADERS = {
+  "Content-Type": "application/json",
+  "X-Master-Key": MASTER_KEY
+};
+/* ========================================================== */
+
+let DB = { sites:[], sections:["برمجة","تصميم","تعليم"], visits:{totalVisitors:0, siteClicks:0},
+           users:[], messages:[], suggestions:[] };
+let currentUser = null; // {username, isAdmin}
+let currentSection = null; // القسم المفتوح حالياً
+
+/* ---------- نظام الـ Modal البديل للـ Alert والـ Confirm ---------- */
+function showAlert(title, message, icon = '✨') {
+  document.getElementById('notifyIcon').textContent = icon;
+  document.getElementById('notifyTitle').textContent = title;
+  document.getElementById('notifyMessage').textContent = message;
+  document.getElementById('notifySingleBtn').style.display = 'block';
+  document.getElementById('notifyConfirmBtns').style.display = 'none';
+  document.getElementById('customNotifyModal').classList.add('show');
+}
+
+function showConfirm(title, message, onConfirm, icon = '⚠️') {
+  document.getElementById('notifyIcon').textContent = icon;
+  document.getElementById('notifyTitle').textContent = title;
+  document.getElementById('notifyMessage').textContent = message;
+  document.getElementById('notifySingleBtn').style.display = 'none';
+  document.getElementById('notifyConfirmBtns').style.display = 'flex';
+  
+  const yesBtn = document.getElementById('notifyConfirmYesBtn');
+  yesBtn.onclick = function() {
+    closeModal('customNotifyModal');
+    onConfirm();
+  };
+  
+  document.getElementById('customNotifyModal').classList.add('show');
+}
+
+/* ---------- تحميل وحفظ قاعدة البيانات ---------- */
+async function loadDB(){
+  try{
+    const j = await (await fetch(`${BIN_URL}/latest`, { headers: HEADERS })).json();
+    DB = Object.assign(DB, j.record || {});
+  }catch(e){ console.warn("تعذر تحميل البيانات:", e); }
+  fillCatSelect();
+}
+async function saveDB(){
+  try{ await fetch(BIN_URL, { method:"PUT", headers: HEADERS, body: JSON.stringify(DB) }); }
+  catch(e){ showAlert("خطأ في الحفظ", "تعذر الحفظ في jsonbin، تحقق من المفاتيح والأذونات.", "❌"); }
+}
+function fillCatSelect(){
+  const sel = document.getElementById("aCat");
+  if(sel) sel.innerHTML = DB.sections.map(s=>`<option value="${s}">${s}</option>`).join("");
+}
+
+/* ---------- الزوار ---------- */
+async function countVisit(){
+  if(!sessionStorage.getItem("counted")){
+    sessionStorage.setItem("counted","1");
+    DB.visits.totalVisitors = (DB.visits.totalVisitors||0) + 1;
+    await saveDB();
+  }
+}
+
+/* ---------- الجلسة + عداد الزائر ---------- */
+function saveSession(){ sessionStorage.setItem("cu", JSON.stringify(currentUser)); }
+function restoreSession(){
+  try{ currentUser = JSON.parse(sessionStorage.getItem("cu")); }catch(e){ currentUser=null; }
+  if(currentUser) applyAuthUI();
+}
+function getGuestOpens(){ return parseInt(sessionStorage.getItem("guestOpens")||"0"); }
+function incGuestOpens(){ sessionStorage.setItem("guestOpens", getGuestOpens()+1); }
+function canOpenSite(){
+  if(currentUser) return true;
+  return getGuestOpens() < GUEST_LIMIT;
+}
+function applyAuthUI(){
+  document.getElementById("userGreeting").textContent =
+    (currentUser.isAdmin ? "👑 مشرف: " : "👤 ") + currentUser.username;
+  document.getElementById("authBtn").style.display = "none";
+  document.getElementById("logoutBtn").style.display = "block";
+  document.getElementById("adminPanel").classList.toggle("show", currentUser.isAdmin);
+  if(currentUser.isAdmin){ refreshStats(); renderAdminLists(); }
+}
+
+/* ---------- القائمة ---------- */
+function toggleMenu(){
+  document.getElementById("neonMenu").classList.toggle("open");
+  document.getElementById("burger").classList.toggle("open");
+}
+
+/* ---------- البحث ---------- */
+function expandSearch(){
+  document.getElementById("searchBtn").style.display = "none";
+  document.getElementById("searchRow").classList.add("show");
+  document.getElementById("searchInput").focus();
+  document.getElementById("searchWrap").classList.add("small");
+}
+function liveSuggest(){
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const box = document.getElementById("suggest");
+  if(!q){ box.innerHTML=""; return; }
+  const matches = DB.sites.filter(s =>
+    s.name.toLowerCase().includes(q) || (s.category||"").toLowerCase().includes(q)).slice(0,6);
+  box.innerHTML = matches.map((s,i)=>`
+    <div class="sug-item" onclick="tryOpenSite(${DB.sites.indexOf(s)})">
+      <div><strong>${s.name}</strong><br><small>${s.desc||""}</small></div>
+      <span class="tag">${s.category||""}</span>
+    </div>`).join("") || `<div class="sug-item"><small>لا نتائج — اضغط زر البحث لعرض كل النتائج</small></div>`;
+}
+function doSearch(){
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const list = q ? DB.sites.filter(s =>
+    s.name.toLowerCase().includes(q) || (s.category||"").toLowerCase().includes(q) || (s.desc||"").toLowerCase().includes(q)
+  ) : DB.sites;
+  document.getElementById("suggest").innerHTML="";
+  document.getElementById("contactSec").classList.remove("show");
+  if(!currentUser || !currentUser.isAdmin) document.getElementById("adminPanel").classList.remove("show");
+  document.getElementById("sectionsGrid").style.display="none";
+  currentSection = null;
+  renderResults(list);
+  window.scrollTo({top: document.getElementById("results").offsetTop - 60, behavior:"smooth"});
+}
+function renderResults(list, showAdminDelete){
+  const r = document.getElementById("results");
+  if(!list.length){ r.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--sub)">لا توجد مواقع في هذا القسم بعد</p>`; return; }
+  r.innerHTML = list.map(s=>{
+    const idx = DB.sites.indexOf(s);
+    return `
+    <div class="card" onclick="tryOpenSite(${idx})">
+      ${showAdminDelete ? `<button class="del-x" title="حذف الموقع" onclick="event.stopPropagation();deleteSite(${idx})">✕</button>` : ""}
+      <img src="${s.img||''}" onerror="this.style.display='none'" alt="">
+      <div class="card-body">
+        <h3>${s.name}</h3>
+        <p>${s.desc||""}</p>
+        <span class="tag">${s.category||""}</span>
       </div>
-      <button type="submit" class="btn-submit">
-        <span>إنشاء الحساب</span>
-      </button>
-    </form>
-  </div>
+    </div>`;
+  }).join("");
+}
+/* فتح موقع مع حماية حد الزائر */
+async function tryOpenSite(idx){
+  if(!canOpenSite()){
+    document.getElementById("limitModal").classList.add("show");
+    return;
+  }
+  const s = DB.sites[idx];
+  if(!s) return;
+  if(!currentUser) incGuestOpens(); // عدّاد الزائر فقط
+  DB.visits.siteClicks = (DB.visits.siteClicks||0) + 1;
+  await saveDB();
+  if(currentUser && currentUser.isAdmin) refreshStats();
+  window.open(s.url, "_blank");
+  // إن وصل للحد الأخير نبّهه مسبقاً
+  if(!currentUser && getGuestOpens() >= GUEST_LIMIT){
+    document.getElementById("limitModal").classList.add("show");
+  }
+}
 
-  <!-- ==========================================================================
-       2. نموذج إضافة موقع إلى القسم
-       ========================================================================== -->
-  <div class="container">
-    <h3>
-      <span>➕</span>
-      <span>إضافة موقع إلى قسم</span>
-    </h3>
-    <form id="addSiteForm" autocomplete="off">
-      <div class="form-group">
-        <label for="siteCategory">اختر القسم</label>
-        <select id="siteCategory" required>
-          <option value="" disabled selected>اختر القسم المناسب...</option>
-          <option value="برمجة">برمجة</option>
-          <option value="ألعاب">ألعاب</option>
-          <option value="أدوات">أدوات</option>
-          <option value="تصميم">تصميم</option>
-          <option value="عام">عام</option>
-        </select>
-      </div>
+/* ---------- الأقسام ---------- */
+function showAllSections(){
+  toggleMenu();
+  currentSection = null;
+  document.getElementById("results").innerHTML="";
+  document.getElementById("contactSec").classList.remove("show");
+  if(!currentUser || !currentUser.isAdmin) document.getElementById("adminPanel").classList.remove("show");
+  const g = document.getElementById("sectionsGrid");
+  g.style.display="grid";
+  g.innerHTML = DB.sections.map(sec=>{
+    const count = DB.sites.filter(s=>s.category===sec).length;
+    const del = (currentUser && currentUser.isAdmin)
+      ? `<button class="del-x sec-del" title="حذف القسم" onclick="event.stopPropagation();deleteSection('${sec}')">✕</button>` : "";
+    return `<div class="sec-card" onclick="openSection('${sec}')">
+      ${del}
+      <div class="icon">📂</div>
+      <h3>${sec}</h3>
+      <small>${count} موقع</small>
+    </div>`;
+  }).join("") || `<p style="grid-column:1/-1;text-align:center;color:var(--sub)">لا توجد أقسام بعد</p>`;
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+function openSection(sec){
+  currentSection = sec;
+  document.getElementById("sectionsGrid").style.display="none";
+  document.getElementById("contactSec").classList.remove("show");
+  if(!currentUser || !currentUser.isAdmin) document.getElementById("adminPanel").classList.remove("show");
+  const list = DB.sites.filter(s=>s.category===sec);
+  renderResults(list, currentUser && currentUser.isAdmin);
+  window.scrollTo({top: document.getElementById("results").offsetTop - 60, behavior:"smooth"});
+}
+function deleteSection(sec){
+  showConfirm("تأكيد الحذف", `هل أنت تأكد من حذف القسم "${sec}"؟ المواقع داخله لن تُحذف لكن ستصبح بدون قسم.`, async () => {
+    DB.sections = DB.sections.filter(s=>s!==sec);
+    await saveDB();
+    fillCatSelect();
+    showAllSections();
+  }, "🗑️");
+}
 
-      <div class="form-group">
-        <label for="siteName">اسم الموقع أو الترشيح</label>
-        <input type="text" id="siteName" placeholder="مثال: موقع ببجي الرسمي..." required>
-      </div>
+/* ---------- موقع اليوم ---------- */
+function showToday(){
+  toggleMenu();
+  currentSection = null;
+  document.getElementById("sectionsGrid").style.display="none";
+  const today = new Date().toISOString().slice(0,10);
+  renderResults(DB.sites.filter(s=>s.date===today));
+  window.scrollTo({top: document.getElementById("results").offsetTop - 60, behavior:"smooth"});
+}
 
-      <div class="form-group">
-        <label for="siteImage">صورة الموقع (اختياري)</label>
-        <input type="file" id="siteImage" accept="image/*">
-      </div>
+/* ---------- الثيم ---------- */
+function toggleTheme(){ document.body.classList.toggle("light"); toggleMenu(); }
 
-      <button type="submit" class="btn-submit">
-        <span>إضافة الموقع الآن</span>
-      </button>
-    </form>
-  </div>
+/* ============ نظام المستخدمين: دخول / تسجيل ============ */
+function openAuth(){ toggleMenu(); closeModal("limitModal"); document.getElementById("authModal").classList.add("show"); }
+function switchTab(t){
+  document.getElementById("loginForm").style.display  = t==="login"  ? "block" : "none";
+  document.getElementById("signupForm").style.display = t==="signup" ? "block" : "none";
+  document.getElementById("tabLogin").classList.toggle("active", t==="login");
+  document.getElementById("tabSignup").classList.toggle("active", t==="signup");
+  document.getElementById("authTitle").textContent = t==="login" ? "🔐 تسجيل الدخول" : "✨ إنشاء حساب جديد";
+}
 
-  <!-- ==========================================================================
-       3. قائمة الترشيحات المضافة (تحميل من data.json + LocalStorage)
-       ========================================================================== -->
-  <div class="container">
-    <h3>
-      <span>⭐️</span>
-      <span>ترشيحات المواقع (من JSON)</span>
-    </h3>
-    <div id="sitesList" class="sites-list">
-      <!-- يتم جلب القائمة وتوليدها هنا عبر JavaScript -->
-    </div>
-  </div>
+async function doSignup(){
+  const u = sUser.value.trim(), p = sPass.value, p2 = sPass2.value, code = sAdminCode.value.trim();
+  const err = document.getElementById("sErr");
+  err.textContent = "";
+  if(u.length < 3)                return err.textContent = "اسم المستخدم يجب أن يكون 3 أحرف على الأقل";
+  if(p.length < 4)                return err.textContent = "كلمة السر قصيرة جداً (4 أحرف على الأقل)";
+  if(p !== p2)                    return err.textContent = "كلمتا السر غير متطابقتين";
+  await loadDB();
+  if(DB.users.some(x => x.username.toLowerCase() === u.toLowerCase()))
+    return err.textContent = "اسم المستخدم موجود مسبقاً، اختر اسماً آخر";
+  const isAdmin = code === ADMIN_SECRET_CODE;
+  DB.users.push({ username: u, pass: p, isAdmin, joined: new Date().toISOString() });
+  await saveDB();
+  currentUser = { username: u, isAdmin };
+  saveSession();
+  sessionStorage.removeItem("guestOpens"); // إزالة حد الزائر بعد التسجيل
+  closeModal("authModal"); closeModal("limitModal");
+  applyAuthUI();
+  showAlert("تم بنجاح", isAdmin ? "👑 تم إنشاء حساب المشرف بنجاح!" : "✨ تم إنشاء حسابك بنجاح، مرحباً " + u + "!", isAdmin ? "👑" : "🎉");
+}
 
-  <!-- ==========================================================================
-       البرمجة والتفاعل (JavaScript)
-       ========================================================================== -->
-  <script>
-    // ------------------------------------------------------------------
-    // 1. نظام الـ Modal الاحترافي (بديل الـ alert)
-    // ------------------------------------------------------------------
-    function showModal(title, message, icon = '✨') {
-      const modal = document.getElementById('customModal');
-      const titleEl = document.getElementById('modalTitle');
-      const msgEl = document.getElementById('modalMessage');
-      const iconEl = document.getElementById('modalIcon');
+async function doLogin(){
+  const u = lUser.value.trim(), p = lPass.value;
+  const err = document.getElementById("lErr");
+  err.textContent = "";
+  await loadDB();
+  const user = DB.users.find(x => x.username.toLowerCase() === u.toLowerCase() && x.pass === p);
+  if(!user) return err.textContent = "اسم المستخدم أو كلمة السر غير صحيحة!";
+  currentUser = { username: user.username, isAdmin: !!user.isAdmin };
+  saveSession();
+  sessionStorage.removeItem("guestOpens"); // إزالة حد الزائر
+  closeModal("authModal"); closeModal("limitModal");
+  applyAuthUI();
+}
 
-      if (titleEl && msgEl && iconEl && modal) {
-        titleEl.innerText = title;
-        msgEl.innerText = message;
-        iconEl.innerText = icon;
-        modal.classList.add('active');
-      }
-    }
+function logout(){
+  currentUser = null;
+  sessionStorage.removeItem("cu");
+  sessionStorage.setItem("guestOpens","0"); // إعادة عداد الزائر بعد الخروج
+  document.getElementById("userGreeting").textContent = "";
+  document.getElementById("authBtn").style.display = "block";
+  document.getElementById("logoutBtn").style.display = "none";
+  document.getElementById("adminPanel").classList.remove("show");
+  showAlert("تسجيل الخروج", "تم تسجيل الخروج بنجاح.", "🚪");
+}
 
-    function closeModal() {
-      const modal = document.getElementById('customModal');
-      if (modal) {
-        modal.classList.remove('active');
-      }
-    }
+/* ---------- إحصائيات وقوائم المشرف ---------- */
+async function refreshStats(){
+  try{
+    const j = await (await fetch(`${BIN_URL}/latest`,{headers:HEADERS})).json();
+    const v = (j.record||{}).visits || {};
+    document.getElementById("stVisitors").textContent = v.totalVisitors || 0;
+    document.getElementById("stClicks").textContent   = v.siteClicks || 0;
+    document.getElementById("stUsers").textContent    = (j.record.users||[]).length;
+    document.getElementById("stActive").textContent   = Math.max(1, Math.min(v.totalVisitors||1, 30));
+  }catch(e){}
+}
+async function renderAdminLists(){
+  await loadDB();
+  document.getElementById("usersList").innerHTML = (DB.users||[]).map(u=>`
+    <div class="sug-item" style="cursor:default">
+      <div><strong>${u.isAdmin?"👑 ":""}${u.username}</strong><br><small>انضم: ${new Date(u.joined).toLocaleDateString("ar")}</small></div>
+      <span class="tag">${u.isAdmin?"مشرف":"مستخدم"}</span>
+    </div>`).join("") || `<p style="color:var(--sub);text-align:center">لا يوجد مستخدمون بعد</p>`;
+  document.getElementById("msgsList").innerHTML = (DB.messages||[]).map(m=>`
+    <div class="sug-item" style="cursor:default">
+      <div><strong>${m.name||"مستخدم"}</strong><br><small>${m.msg}</small></div>
+      <small>${new Date(m.date).toLocaleDateString("ar")}</small>
+    </div>`).join("") || `<p style="color:var(--sub);text-align:center">لا توجد رسائل بعد</p>`;
+  document.getElementById("sugList").innerHTML = (DB.suggestions||[]).map(s=>`
+    <div class="sug-item" style="cursor:default">
+      <div><strong>${s.name}</strong> <small>(${s.category||"بدون قسم"})</small><br><small>${s.url} — رشّحه: ${s.from||"زائر"}</small></div>
+      <span>
+        <button class="row-del" title="قبول (إضافة للمواقع)" onclick="acceptSuggestion('${s.name.replace(/'/g,"\\'")}','${s.url.replace(/'/g,"\\'")}','${(s.category||"").replace(/'/g,"\\'")}')">✔</button>
+        <button class="row-del" title="رفض" onclick="rejectSuggestion(${(DB.suggestions||[]).indexOf(s)})">✕</button>
+      </span>
+    </div>`).join("") || `<p style="color:var(--sub);text-align:center">لا توجد ترشيحات بعد</p>`;
+  renderSectionManage();
+}
+function renderSectionManage(){
+  document.getElementById("secManage").innerHTML = DB.sections.map(sec=>`
+    <div class="sug-item" style="cursor:default">
+      <div><strong>📂 ${sec}</strong><br><small>${DB.sites.filter(s=>s.category===sec).length} موقع</small></div>
+      <button class="row-del" title="حذف القسم" onclick="deleteSectionAdmin('${sec}')">🗑️</button>
+    </div>`).join("");
+}
+async function deleteSectionAdmin(sec){
+  deleteSection(sec);
+  await renderAdminLists();
+}
+async function acceptSuggestion(name, url, cat){
+  if(cat && !DB.sections.includes(cat)) DB.sections.push(cat);
+  DB.sites.push({ name, url, desc:"", category:cat||"عام", img:"",
+    date: new Date().toISOString().slice(0,10), addedBy:"ترشيح مقبول" });
+  await saveDB(); fillCatSelect(); await renderAdminLists();
+  showAlert("تم القبول", "تم قبول الترشيح وإضافة الموقع بنجاح ✔", "✅");
+}
+async function rejectSuggestion(i){
+  DB.suggestions.splice(i,1);
+  await saveDB(); await renderAdminLists();
+}
 
-    // إغلاق النوافذ عند الضغط خارج بطاقة الـ Modal
-    document.addEventListener('DOMContentLoaded', function() {
-      const modalOverlay = document.getElementById('customModal');
-      if (modalOverlay) {
-        modalOverlay.addEventListener('click', function(event) {
-          if (event.target === this) {
-            closeModal();
-          }
-        });
-      }
-    });
+/* ---------- ترشيح موقع ---------- */
+function openSuggestModal(){
+  toggleMenu();
+  document.getElementById("suggestModal").classList.add("show");
+}
+async function sendSuggest(){
+  const name = sgName.value.trim(), url = sgUrl.value.trim();
+  if(!name || !url){ sgErr.textContent = "أدخل الاسم والرابط"; return; }
+  DB.suggestions = DB.suggestions || [];
+  DB.suggestions.push({ name, url, category: sgCat.value.trim(),
+    from: currentUser ? currentUser.username : "زائر" });
+  await saveDB();
+  closeModal("suggestModal"); 
+  showAlert("شكراً لك", "تم إرسال ترشيحك للمشرف بنجاح.", "⭐");
+}
+function closeModal(id){ document.getElementById(id).classList.remove("show"); }
 
-    // ------------------------------------------------------------------
-    // 2. قراءة وملف data.json وإدارة البيانات
-    // ------------------------------------------------------------------
-    async function fetchJsonSites() {
-      try {
-        const response = await fetch('data.json', { cache: 'no-cache' });
-        if (!response.ok) {
-          throw new Error('فشل جلب الملف: ' + response.statusText);
-        }
-        const jsonData = await response.json();
-        return Array.isArray(jsonData) ? jsonData : [];
-      } catch (error) {
-        console.warn('تنبيه: تعذر قراءة data.json مباشرة، جاري الاعتماد على التخزين المحلي.', error);
-        return [];
-      }
-    }
+/* ---------- تواصل مع المشرف ---------- */
+function openContact(){
+  toggleMenu();
+  document.getElementById("sectionsGrid").style.display="none";
+  document.getElementById("contactSec").classList.add("show");
+  document.getElementById("results").innerHTML="";
+  document.getElementById("contactSec").scrollIntoView({behavior:"smooth"});
+}
+async function sendMsg(){
+  const msg = cMsg.value.trim();
+  if(!msg) return;
+  DB.messages = DB.messages || [];
+  DB.messages.push({ name: currentUser ? currentUser.username : "زائر", msg, date: new Date().toISOString() });
+  await saveDB();
+  cMsg.value = "";
+  document.getElementById("okMsg").style.display = "block";
+  setTimeout(()=> document.getElementById("okMsg").style.display="none", 3500);
+}
 
-    function getLocalSites() {
-      try {
-        const savedData = localStorage.getItem('user_sites');
-        return savedData ? JSON.parse(savedData) : [];
-      } catch (err) {
-        console.error('خطأ في قراءة الـ LocalStorage:', err);
-        return [];
-      }
-    }
+/* ---------- إضافة موقع بصورة ---------- */
+let imgData = "";
+function previewImg(e){
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ev => {
+    imgData = ev.target.result;
+    const p = document.getElementById("imgPrev");
+    p.src = imgData; p.style.display = "block";
+  };
+  rd.readAsDataURL(f);
+}
+async function addSite(e){
+  e.preventDefault();
+  const cat = aCat.value.trim();
+  if(cat && !DB.sections.includes(cat)){ DB.sections.push(cat); fillCatSelect(); }
+  DB.sites.push({
+    name: aName.value.trim(), url: aUrl.value.trim(), desc: aDesc.value.trim(),
+    category: cat, img: imgData,
+    date: new Date().toISOString().slice(0,10),
+    addedBy: currentUser ? currentUser.username : "المشرف"
+  });
+  await saveDB();
+  showAlert("تمت الإضافة", "تمت إضافة الموقع بنجاح ✔", "➕");
+  aName.value=aUrl.value=aDesc.value=""; imgData="";
+  document.getElementById("imgPrev").style.display="none";
+  if(currentSection) openSection(currentSection);
+  else showAllSections();
+}
+async function addSection(e){
+  e.preventDefault();
+  const s = aSec.value.trim();
+  if(s && !DB.sections.includes(s)){
+    DB.sections.push(s); await saveDB();
+    fillCatSelect(); renderSectionManage();
+    aSec.value=""; 
+    showAlert("تمت الإضافة", "تمت إضافة القسم الجديد بنجاح ✔", "📁");
+  }
+}
+function deleteSite(idx){
+  showConfirm("حذف الموقع", "هل أنت تأكد من رغبتك في حذف هذا الموقع؟", async () => {
+    DB.sites.splice(idx,1);
+    await saveDB();
+    if(currentSection) openSection(currentSection);
+    else showAllSections();
+  }, "🗑️");
+}
 
-    function saveSiteToLocalStorage(siteObj) {
-      try {
-        let currentSites = getLocalSites();
-        currentSites.unshift(siteObj);
-        localStorage.setItem('user_sites', JSON.stringify(currentSites));
-      } catch (err) {
-        console.error('خطأ في كتابة الـ LocalStorage:', err);
-      }
-    }
+/* إغلاق المودالات بالنقر خارجها + Enter للدخول */
+document.querySelectorAll(".modal").forEach(m=>{
+  m.addEventListener("click", e=>{ if(e.target===m) m.classList.remove("show"); });
+});
+document.getElementById("authModal").addEventListener("keydown", e=>{
+  if(e.key==="Enter"){
+    if(document.getElementById("loginForm").style.display!=="none") doLogin();
+    else doSignup();
+  }
+});
 
-    async function loadAndDisplayAllSites() {
-      const listContainer = document.getElementById('sitesList');
-      if (!listContainer) return;
+/* ---------- الإقلاع ---------- */
+window.addEventListener("load", async () => {
+  await loadDB();
+  await countVisit();
+  restoreSession();
+  refreshStats();
+  showAllSections(); // عرض الأقسام عند الإقلاع
+  setTimeout(() => document.getElementById("welcome").classList.add("hide"), 2600);
+});
 
-      // 1. جلب بيانات ملف data.json
-      const jsonSites = await fetchJsonSites();
+/* ---------- إغلاق القائمة عند التمرير أو النقر خارجها ---------- */
+window.addEventListener("scroll", () => {
+  const menu = document.getElementById("neonMenu");
+  const burger = document.getElementById("burger");
+  if (menu && menu.classList.contains("open")) {
+    menu.classList.remove("open");
+    burger.classList.remove("open");
+  }
+});
 
-      // 2. جلب إضافات المستخدم المحلية
-      const localSites = getLocalSites();
+// إغلاق عند النقر خارج القائمة
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("neonMenu");
+  const burger = document.getElementById("burger");
+  if (menu && menu.classList.contains("open") && !menu.contains(e.target) && !burger.contains(e.target)) {
+    menu.classList.remove("open");
+    burger.classList.remove("open");
+  }
+});
 
-      // 3. دمج المجموعتين
-      const combinedSites = [...localSites, ...jsonSites];
-
-      // 4. بناء الـ HTML
-      renderSitesUI(combinedSites, listContainer);
-    }
-
-    function renderSitesUI(sitesArray, container) {
-      if (!sitesArray || sitesArray.length === 0) {
-        container.innerHTML = '<div class="empty-state">لا توجد مواقـع أو ترشيحات مضافة حتى الآن.</div>';
-        return;
-      }
-
-      let htmlOutput = '';
-
-      for (let i = 0; i < sitesArray.length; i++) {
-        const item = sitesArray[i];
-        const siteTitle = item.name || item.title || 'موقع بدون عنوان';
-        const siteCategory = item.category || 'عام';
-        const siteDate = item.date || 'منذ فترة';
-
-        htmlOutput += `
-          <div class="site-card">
-            <div class="site-info">
-              <h4>${escapeHtml(siteTitle)}</h4>
-              <span>${escapeHtml(siteCategory)}</span>
-            </div>
-            <div class="site-date">${escapeHtml(siteDate)}</div>
-          </div>
-        `;
-      }
-
-      container.innerHTML = htmlOutput;
-    }
-
-    // دالة لتنظيف مدخلات النص وحمايتها من XSS
-    function escapeHtml(text) {
-      if (typeof text !== 'string') return text;
-      return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    // ------------------------------------------------------------------
-    // 3. معالجة نموذج إنشاء الحساب
-    // ------------------------------------------------------------------
-    const signupForm = document.getElementById('signupForm');
-    if (signupForm) {
-      signupForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-        
-        const nameInput = document.getElementById('signupName');
-        const userName = nameInput ? nameInput.value.trim() : '';
-
-        if (userName !== '') {
-          showModal('تم الحساب بنجاح', `أهلاً بك يا ${userName}! تم إنشاء الحساب بنجاح.`, '🎉');
-          signupForm.reset();
-        } else {
-          showModal('خطأ', 'يرجى كتابة اسم المستخدم أولاً!', '⚠️');
-        }
-      });
-    }
-
-    // ------------------------------------------------------------------
-    // 4. معالجة نموذج إضافة موقع
-    // ------------------------------------------------------------------
-    const addSiteForm = document.getElementById('addSiteForm');
-    if (addSiteForm) {
-      addSiteForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        const categorySelect = document.getElementById('siteCategory');
-        const nameInput = document.getElementById('siteName');
-
-        const selectedCategory = categorySelect ? categorySelect.value : '';
-        const siteNameValue = nameInput ? nameInput.value.trim() : '';
-
-        if (!selectedCategory) {
-          showModal('تنبيه', 'يرجى اختيار القسم المناسب من القائمة.', '⚠️');
-          return;
-        }
-
-        if (!siteNameValue) {
-          showModal('تنبيه', 'يرجى إدخال اسم الموقع.', '⚠️');
-          return;
-        }
-
-        // إنشاء كائن البيانات للموقع الجديد
-        const newSiteObject = {
-          name: siteNameValue,
-          category: selectedCategory,
-          date: new Date().toLocaleDateString('ar-EG')
-        };
-
-        // حفظ بالـ LocalStorage
-        saveSiteToLocalStorage(newSiteObject);
-
-        // إعادة عرض القائمة بالبيانات الجديدة
-        loadAndDisplayAllSites();
-
-        // إظهار Modal النجاح بدلاً من alert
-        showModal('تم القبول', 'تم قبول الترشيح وإضافة الموقع إلى القائمة بنجاح! ✔', '✅');
-
-        // إعادة تفريغ الحقول
-        addSiteForm.reset();
-      });
-    }
-
-    // ------------------------------------------------------------------
-    // 5. التشغيل الأولي عند تحميل DOM بالكامل
-    // ------------------------------------------------------------------
-    window.addEventListener('DOMContentLoaded', function() {
-      loadAndDisplayAllSites();
-    });
-  </script>
+</script>
 </body>
 </html>
